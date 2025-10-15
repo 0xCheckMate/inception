@@ -1,0 +1,76 @@
+services:
+  mariadb:
+    build: requirements/mariadb/.
+    image: mariadb:asedoun
+    restart: always
+    container_name: mariadb-container
+    networks:
+      - inception-net
+    env_file:
+      - .env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+  wordpress:
+    build: requirements/wordpress/.
+    image: wordpress:asedoun
+    restart: always
+    volumes:
+      - wordpress_data:/var/www/html
+    container_name: wordpress-container
+    depends_on:
+      - mariadb
+    env_file:
+      - .env
+    networks:
+      - inception-net
+  nginx:
+    build: requirements/nginx/.
+    image: nginx:asedoun
+    restart: always
+    volumes:
+      - wordpress_data:/var/www/html
+    ports:
+      - "443:443"
+    container_name: nginx-container
+    depends_on:
+      - mariadb
+      - wordpress
+    networks:
+      - inception-net
+  web:
+    build: requirements/bonus/web/.
+    image: web:asedoun
+    restart: always
+    ports:
+      - "8000:8000"
+    container_name:
+      web-container
+  adminer:
+    build: requirements/bonus/adminer/.
+    image: adminer:asedoun
+    restart: always
+    ports:
+      - "8080:8080"
+    container_name:
+      adminer_container
+    networks:
+      - inception-net
+    depends_on:
+      - mariadb
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/asedoun/data/mariadb/
+      o: bind
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/asedoun/data/wordpress
+      o: bind
+
+networks:
+  inception-net:
+    driver: bridge
